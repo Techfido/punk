@@ -1,0 +1,393 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Punk Mind Map - Zoom & Drag</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rock+Salt&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      background-color: #111;
+      font-family: 'Rock Salt', cursive;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      background-color: #111;
+      position: relative;
+      z-index: 1;
+    }
+    .tooltip {
+      position: absolute;
+      background: #333;
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      pointer-events: none;
+      display: none;
+      z-index: 101;
+    }
+  </style>
+</head>
+<body>
+<button id="saveLayout" style="
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 9999;
+  background: #222;
+  color: #fff;
+  font-family: 'Rock Salt', cursive;
+  border: 2px solid #fff;
+  padding: 8px 12px;
+  cursor: pointer;">💾 Save Layout</button>
+<div class="tooltip" id="tooltip"></div>
+<canvas id="mindmap" width="1400" height="900"></canvas>
+<script>
+const canvas = document.getElementById('mindmap');
+const ctx = canvas.getContext('2d');
+const tooltip = document.getElementById('tooltip');
+
+let scale = 1;
+let offsetX = 0;
+let offsetY = 0;
+let dragging = false;
+let dragStart = null;
+let selectedNode = null;
+let isDraggingNode = false;
+
+const nodes = {
+  "Punk": {
+    "x": 700,
+    "y": 450,
+    "r": 60,
+    "desc": "The core of all punk styles.",
+    "color": "#FF4D4D"
+  },
+  "Garage Punk": {
+    "x": 580,
+    "y": 500,
+    "r": 30,
+    "desc": "Raw, garage-style punk.",
+    "color": "#A0522D"
+  },
+  "Hardcore Punk": {
+    "x": 500,
+    "y": 300,
+    "r": 40,
+    "desc": "Heavier and faster punk.",
+    "color": "#FF8C42"
+  },
+  "Melodic Hardcore": {
+    "x": 386,
+    "y": 217,
+    "r": 30,
+    "desc": "Hardcore with melody.",
+    "color": "#FFAD60"
+  },
+  "Straight Edge": {
+    "x": 448,
+    "y": 145,
+    "r": 30,
+    "desc": "Clean-living hardcore.",
+    "color": "#FFD042"
+  },
+  "Youth Crew": {
+    "x": 314,
+    "y": 269,
+    "r": 30,
+    "desc": "Positive hardcore movement.",
+    "color": "#FFE28A"
+  },
+  "D-Beat": {
+    "x": 383,
+    "y": 341,
+    "r": 30,
+    "desc": "Distorted, aggressive beats.",
+    "color": "#FFEEBD"
+  },
+  "Pop Punk": {
+    "x": 880,
+    "y": 300,
+    "r": 40,
+    "desc": "Melodic, catchy punk.",
+    "color": "#1E90FF"
+  },
+  "Easycore": {
+    "x": 960,
+    "y": 240,
+    "r": 30,
+    "desc": "Pop punk with breakdowns.",
+    "color": "#66CCFF"
+  },
+  "Neon Pop": {
+    "x": 960,
+    "y": 360,
+    "r": 30,
+    "desc": "Synth-driven pop punk.",
+    "color": "#A0DFFF"
+  },
+  "Power Pop": {
+    "x": 1000,
+    "y": 300,
+    "r": 30,
+    "desc": "Catchy, guitar-driven pop punk.",
+    "color": "#87CEFA"
+  },
+  "Punk Rock": {
+    "x": 795,
+    "y": 610,
+    "r": 40,
+    "desc": "Melodic and structured punk.",
+    "color": "#F08080"
+  },
+  "Post-Punk": {
+    "x": 500,
+    "y": 650,
+    "r": 40,
+    "desc": "Experimental, arty punk.",
+    "color": "#BA55D3"
+  },
+  "No Wave": {
+    "x": 450,
+    "y": 710,
+    "r": 30,
+    "desc": "Dissonant, chaotic punk.",
+    "color": "#D291E4"
+  },
+  "Dance-Punk": {
+    "x": 540,
+    "y": 740,
+    "r": 30,
+    "desc": "Rhythmic and danceable.",
+    "color": "#EAC4F9"
+  },
+  "Emo": {
+    "x": 394,
+    "y": 624,
+    "r": 30,
+    "desc": "Emotional post-hardcore punk.",
+    "color": "#FF69B4"
+  },
+  "Screamo": {
+    "x": 320,
+    "y": 672,
+    "r": 30,
+    "desc": "Intense emotional hardcore.",
+    "color": "#FFB6C1"
+  },
+  "Folk Punk": {
+    "x": 950,
+    "y": 640,
+    "r": 40,
+    "desc": "Acoustic + punk energy.",
+    "color": "#3CB371"
+  },
+  "Celtic Punk": {
+    "x": 1030,
+    "y": 680,
+    "r": 30,
+    "desc": "Irish folk + punk.",
+    "color": "#8AE68E"
+  },
+  "Gypsy Punk": {
+    "x": 990,
+    "y": 740,
+    "r": 30,
+    "desc": "Eastern folk + punk.",
+    "color": "#C1F4C5"
+  },
+  "Anarcho-Punk": {
+    "x": 700,
+    "y": 200,
+    "r": 40,
+    "desc": "Political and raw punk.",
+    "color": "#DC143C"
+  },
+  "Crust Punk": {
+    "x": 630,
+    "y": 120,
+    "r": 30,
+    "desc": "Grimy anarchist punk.",
+    "color": "#FF7A7A"
+  },
+  "Peace Punk": {
+    "x": 770,
+    "y": 120,
+    "r": 30,
+    "desc": "Pacifist punk themes.",
+    "color": "#FFAAAA"
+  },
+  "Ska Punk": {
+    "x": 915,
+    "y": 450,
+    "r": 40,
+    "desc": "Punk with ska rhythm.",
+    "color": "#FFD700"
+  },
+  "Riot Grrrl": {
+    "x": 700,
+    "y": 685,
+    "r": 40,
+    "desc": "Feminist punk.",
+    "color": "#FF69B4"
+  },
+  "Queercore": {
+    "x": 467,
+    "y": 430,
+    "r": 40,
+    "desc": "LGBTQ+ punk movement.",
+    "color": "#DA70D6"
+  }
+};
+
+const links = [
+  ["Punk", "Garage Punk"],
+  ["Punk", "Hardcore Punk"],
+  ["Hardcore Punk", "Straight Edge"],
+  ["Hardcore Punk", "Youth Crew"],
+  ["Hardcore Punk", "D-Beat"],
+  ["Hardcore Punk", "Melodic Hardcore"],
+  ["Punk", "Pop Punk"],
+  ["Pop Punk", "Easycore"],
+  ["Pop Punk", "Neon Pop"],
+  ["Pop Punk", "Power Pop"],
+  ["Punk", "Punk Rock"],
+  ["Punk", "Post-Punk"],
+  ["Post-Punk", "No Wave"],
+  ["Post-Punk", "Dance-Punk"],
+  ["Post-Punk", "Emo"],
+  ["Emo", "Screamo"],
+  ["Punk", "Folk Punk"],
+  ["Folk Punk", "Celtic Punk"],
+  ["Folk Punk", "Gypsy Punk"],
+  ["Punk", "Anarcho-Punk"],
+  ["Anarcho-Punk", "Crust Punk"],
+  ["Anarcho-Punk", "Peace Punk"],
+  ["Punk", "Ska Punk"],
+  ["Punk", "Riot Grrrl"],
+  ["Punk", "Queercore"]
+];
+
+function draw() {
+  ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
+  ctx.clearRect(-offsetX / scale, -offsetY / scale, canvas.width / scale, canvas.height / scale);
+
+  ctx.strokeStyle = "#888";
+  ctx.lineWidth = 2;
+
+  links.forEach(([a, b]) => {
+    const n1 = nodes[a], n2 = nodes[b];
+    ctx.beginPath();
+    ctx.moveTo(n1.x, n1.y);
+    ctx.lineTo(n2.x, n2.y);
+    ctx.stroke();
+  });
+
+  Object.entries(nodes).forEach(([name, node]) => {
+    ctx.beginPath();
+    ctx.fillStyle = node.color;
+    ctx.arc(node.x, node.y, node.r, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#fff";
+    ctx.font = "12px 'Rock Salt', cursive";
+    ctx.textAlign = "center";
+    ctx.shadowColor = "#000";
+    ctx.shadowBlur = 3;
+    ctx.fillText(name, node.x, node.y + 4);
+    ctx.shadowBlur = 0;
+  });
+}
+
+canvas.addEventListener("mousedown", (e) => {
+  const x = (e.offsetX - offsetX) / scale;
+  const y = (e.offsetY - offsetY) / scale;
+  for (let [name, node] of Object.entries(nodes)) {
+    const dx = x - node.x;
+    const dy = y - node.y;
+    if (dx * dx + dy * dy < node.r * node.r) {
+      selectedNode = name;
+      isDraggingNode = true;
+      return;
+    }
+  }
+  dragStart = { x: e.offsetX, y: e.offsetY };
+  dragging = true;
+});
+
+canvas.addEventListener("mousemove", (e) => {
+  if (isDraggingNode && selectedNode) {
+    const node = nodes[selectedNode];
+    node.x = (e.offsetX - offsetX) / scale;
+    node.y = (e.offsetY - offsetY) / scale;
+    draw();
+    return;
+  }
+
+  if (dragStart && dragging) {
+    offsetX += e.offsetX - dragStart.x;
+    offsetY += e.offsetY - dragStart.y;
+    dragStart = { x: e.offsetX, y: e.offsetY };
+    draw();
+  }
+
+  const mx = (e.offsetX - offsetX) / scale;
+  const my = (e.offsetY - offsetY) / scale;
+  let found = false;
+
+  for (let [name, node] of Object.entries(nodes)) {
+    const dx = mx - node.x;
+    const dy = my - node.y;
+    if (dx * dx + dy * dy < node.r * node.r) {
+      tooltip.style.left = e.pageX + 10 + "px";
+      tooltip.style.top = e.pageY + 10 + "px";
+      tooltip.innerText = node.desc;
+      tooltip.style.display = "block";
+      found = true;
+      break;
+    }
+  }
+
+  if (!found) tooltip.style.display = "none";
+});
+
+canvas.addEventListener("mouseup", () => {
+  dragging = false;
+  dragStart = null;
+  isDraggingNode = false;
+  selectedNode = null;
+});
+
+canvas.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  const zoom = e.deltaY < 0 ? 1.1 : 0.9;
+  const x = (e.offsetX - offsetX) / scale;
+  const y = (e.offsetY - offsetY) / scale;
+
+  scale *= zoom;
+  offsetX = e.offsetX - x * scale;
+  offsetY = e.offsetY - y * scale;
+  draw();
+}, { passive: false });
+
+document.getElementById('saveLayout').addEventListener('click', () => {
+  const blob = new Blob(
+    [JSON.stringify(nodes, null, 2)],
+    { type: 'application/json' }
+  );
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'punk_mindmap_positions.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+draw();
+</script>
+</body>
+</html>
