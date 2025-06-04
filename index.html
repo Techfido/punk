@@ -30,15 +30,44 @@
       display: none;
       z-index: 101;
     }
+
+    .zoom-controls {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      z-index: 102;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .zoom-btn {
+      width: 32px;
+      height: 32px;
+      background: #222;
+      color: #eee;
+      border: none;
+      border-radius: 4px;
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 32px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
 <div class="tooltip" id="tooltip"></div>
 <canvas id="mindmap" width="1400" height="900"></canvas>
+<div class="zoom-controls">
+  <button class="zoom-btn" id="zoom-in">+</button>
+  <button class="zoom-btn" id="zoom-out">−</button>
+</div>
 <script>
 const canvas = document.getElementById('mindmap');
 const ctx = canvas.getContext('2d');
 const tooltip = document.getElementById('tooltip');
+const zoomInBtn = document.getElementById('zoom-in');
+const zoomOutBtn = document.getElementById('zoom-out');
 
 let scale = 1;
 let offsetX = 0;
@@ -47,6 +76,24 @@ let dragging = false;
 let dragStart = null;
 let selectedNode = null;
 let isDraggingNode = false;
+
+function applyZoom(zoom, cx, cy) {
+  const x = (cx - offsetX) / scale;
+  const y = (cy - offsetY) / scale;
+
+  scale *= zoom;
+  offsetX = cx - x * scale;
+  offsetY = cy - y * scale;
+  draw();
+}
+
+zoomInBtn.addEventListener('click', () => {
+  applyZoom(1.1, canvas.width / 2, canvas.height / 2);
+});
+
+zoomOutBtn.addEventListener('click', () => {
+  applyZoom(0.9, canvas.width / 2, canvas.height / 2);
+});
 
 const nodes = {
   "Punk": {
@@ -354,13 +401,7 @@ canvas.addEventListener("mouseup", () => {
 canvas.addEventListener("wheel", (e) => {
   e.preventDefault();
   const zoom = e.deltaY < 0 ? 1.1 : 0.9;
-  const x = (e.offsetX - offsetX) / scale;
-  const y = (e.offsetY - offsetY) / scale;
-
-  scale *= zoom;
-  offsetX = e.offsetX - x * scale;
-  offsetY = e.offsetY - y * scale;
-  draw();
+  applyZoom(zoom, e.offsetX, e.offsetY);
 }, { passive: false });
 
 
