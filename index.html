@@ -59,8 +59,8 @@
 <div class="tooltip" id="tooltip"></div>
 <canvas id="mindmap" width="1400" height="900"></canvas>
 <div class="zoom-controls">
-  <button class="zoom-btn" id="zoom-in">+</button>
-  <button class="zoom-btn" id="zoom-out">−</button>
+  <button class="zoom-btn" id="zoom-in" type="button" aria-label="Zoom in">+</button>
+  <button class="zoom-btn" id="zoom-out" type="button" aria-label="Zoom out">-</button>
 </div>
 <script>
 const canvas = document.getElementById('mindmap');
@@ -78,6 +78,7 @@ let selectedNode = null;
 let isDraggingNode = false;
 
 function applyZoom(zoom, cx, cy) {
+  tooltip.style.display = "none";
   const x = (cx - offsetX) / scale;
   const y = (cy - offsetY) / scale;
 
