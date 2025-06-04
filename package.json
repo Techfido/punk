@@ -1,0 +1,12 @@
+{
+  "name": "punk-mind-map",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "serve .",
+    "test": "echo \"No tests specified\" && exit 1"
+  },
+  "devDependencies": {
+    "serve": "^14.0.1"
+  }
+}
