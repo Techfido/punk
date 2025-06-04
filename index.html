@@ -33,17 +33,6 @@
   </style>
 </head>
 <body>
-<button id="saveLayout" style="
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 9999;
-  background: #222;
-  color: #fff;
-  font-family: 'Rock Salt', cursive;
-  border: 2px solid #fff;
-  padding: 8px 12px;
-  cursor: pointer;">💾 Save Layout</button>
 <div class="tooltip" id="tooltip"></div>
 <canvas id="mindmap" width="1400" height="900"></canvas>
 <script>
@@ -374,18 +363,6 @@ canvas.addEventListener("wheel", (e) => {
   draw();
 }, { passive: false });
 
-document.getElementById('saveLayout').addEventListener('click', () => {
-  const blob = new Blob(
-    [JSON.stringify(nodes, null, 2)],
-    { type: 'application/json' }
-  );
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'punk_mindmap_positions.json';
-  a.click();
-  URL.revokeObjectURL(url);
-});
 
 draw();
 </script>
